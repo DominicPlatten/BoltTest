@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /models/{modelId} {
+      // Allow read if the user is authenticated and the document belongs to them
+      allow read: if request.auth != null && (
+        !exists(/databases/$(database)/documents/models/$(modelId)) ||
+        resource.data.userId == request.auth.uid
+      );
+      
+      // Allow create if user is authenticated and sets themselves as owner
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow update/delete if user owns the document
+      allow update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
